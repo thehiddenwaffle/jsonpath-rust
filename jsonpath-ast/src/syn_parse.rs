@@ -630,11 +630,27 @@ pub(crate) mod parse_impl {
 
     impl ToTokens for FunctionName {
         fn to_tokens(&self, tokens: &mut TokenStream) {
-            tokens.extend(quote! {
-                ::jsonpath_ast::ast::FunctionName::new(
-                    ::proc_macro2::Ident::new("function_name", ::proc_macro2::Span::call_site())
-                )
-            });
+            // tokens.extend(quote! {
+            //     ::jsonpath_ast::ast::FunctionName::new(
+            //         ::proc_macro2::Ident::new("function_name", ::proc_macro2::Span::call_site())
+            //     )
+            // });
+            let variant = match self {
+                // Literal::Number(inner) => {
+                //     quote!(new_number(#inner))
+                // }
+                FunctionName::Length(_) => { quote!(new_length(Default::default())) }
+                FunctionName::Value(_) => { quote!(new_value(Default::default())) }
+                FunctionName::Count(_) => { quote!(new_count(Default::default())) }
+                FunctionName::Search(_) => { quote!(new_search(Default::default())) }
+                FunctionName::Match(_) => { quote!(new_match(Default::default())) }
+                FunctionName::In(_) => { quote!(new_in(Default::default())) }
+                FunctionName::Nin(_) => { quote!(new_nin(Default::default())) }
+                FunctionName::NoneOf(_) => { quote!(new_none_of(Default::default())) }
+                FunctionName::AnyOf(_) => { quote!(new_any_of(Default::default())) }
+                FunctionName::SubsetOf(_) => { quote!(new_subset_of(Default::default())) }
+            };
+            tokens.extend(quote!(::jsonpath_ast::ast::FunctionName::#variant))
         }
     }
 
@@ -1087,10 +1103,10 @@ pub(crate) mod parse_impl {
 
     fn function_name_expected_args(name: &FunctionName) -> (String, usize) {
         (format!("{:?}", name), match name {
-            FunctionName::Length(_) | FunctionName::Value(_) | FunctionName::Count(_) => { 2 },
+            FunctionName::Length(_) | FunctionName::Value(_) | FunctionName::Count(_) => { 1 },
             FunctionName::Search(_) | FunctionName::Match(_)
             | FunctionName::In(_) | FunctionName::Nin(_)
-            | FunctionName::NoneOf(_) | FunctionName::AnyOf(_) | FunctionName::SubsetOf(_) => { 1 },
+            | FunctionName::NoneOf(_) | FunctionName::AnyOf(_) | FunctionName::SubsetOf(_) => { 2 },
         })
     }
     impl Parse for FunctionExpr {
