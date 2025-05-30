@@ -653,25 +653,25 @@ impl<'pest> from_pest::FromPest<'pest> for FunctionExpr {
 #[cfg_attr(feature = "compiled-path", derive(Parse))]
 pub enum FunctionName {
     #[cfg_attr(feature = "compiled-path", parse(peek = kw::length))]
-    Length,
+    Length(kw::length),
     #[cfg_attr(feature = "compiled-path", parse(peek = kw::value))]
-    Value,
+    Value(kw::value),
     #[cfg_attr(feature = "compiled-path", parse(peek = kw::count))]
-    Count,
+    Count(kw::count),
     #[cfg_attr(feature = "compiled-path", parse(peek = kw::search))]
-    Search,
+    Search(kw::search),
     #[cfg_attr(feature = "compiled-path", parse(peek = Token![match]))]
-    Match,
+    Match(Token![match]),
     #[cfg_attr(feature = "compiled-path", parse(peek = Token![in]))]
-    In,
+    In(Token![in]),
     #[cfg_attr(feature = "compiled-path", parse(peek = kw::nin))]
-    Nin,
+    Nin(kw::nin),
     #[cfg_attr(feature = "compiled-path", parse(peek = kw::none_of))]
-    NoneOf,
+    NoneOf(kw::none_of),
     #[cfg_attr(feature = "compiled-path", parse(peek = kw::any_of))]
-    AnyOf,
+    AnyOf(kw::any_of),
     #[cfg_attr(feature = "compiled-path", parse(peek = kw::subset_of))]
-    SubsetOf,
+    SubsetOf(kw::subset_of),
 }
 
 impl<'pest> FromPest<'pest> for FunctionName {
@@ -689,20 +689,18 @@ impl<'pest> FromPest<'pest> for FunctionName {
         ) {
             let mut inner = pair.into_inner();
             let inner = &mut inner;
-            let this = FunctionName {
-                name: match inner.to_string().as_str().trim() {
-                    "length" => Self::Length,
-                    "value" => Self::Value,
-                    "count" => Self::Count,
-                    "search" => Self::Search,
-                    "match" => Self::Match,
-                    "in" => Self::In,
-                    "nin" => Self::Nin,
-                    "none_of" => Self::NoneOf,
-                    "any_of" => Self::AnyOf,
-                    "subset_of" => Self::SubsetOf,
-                    _ => unreachable!("Invalid function name should be impossible, error in pest grammar"),
-                }
+            let this = match inner.to_string().as_str().trim() {
+                "length" => Self::Length(Default::default()),
+                "value" => Self::Value(Default::default()),
+                "count" => Self::Count(Default::default()),
+                "search" => Self::Search(Default::default()),
+                "match" => Self::Match(Default::default()),
+                "in" => Self::In(Default::default()),
+                "nin" => Self::Nin(Default::default()),
+                "none_of" => Self::NoneOf(Default::default()),
+                "any_of" => Self::AnyOf(Default::default()),
+                "subset_of" => Self::SubsetOf(Default::default()),
+                _ => unreachable!("Invalid function name should be impossible, error in pest grammar")
             };
             *pest = clone;
             Ok(this)

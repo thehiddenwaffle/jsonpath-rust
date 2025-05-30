@@ -1085,23 +1085,23 @@ pub(crate) mod parse_impl {
         Ok(num)
     }
 
-    fn function_name_expected_args(name: &FunctionName) -> usize {
+    fn function_name_expected_args(name: &FunctionName) -> (syn::token, usize) {
         match name {
-            FunctionName::Length | FunctionName::Value | FunctionName::Count => { 2 },
-            FunctionName::Search | FunctionName::Match
-            | FunctionName::In | FunctionName::Nin
-            | FunctionName::NoneOf | FunctionName::AnyOf | FunctionName::SubsetOf => { 1 },
+            FunctionName::Length(w) | FunctionName::Value(w) | FunctionName::Count(w) => { (w, 2) },
+            FunctionName::Search(w) | FunctionName::Match(w)
+            | FunctionName::In(w) | FunctionName::Nin(w)
+            | FunctionName::NoneOf(w) | FunctionName::AnyOf(w) | FunctionName::SubsetOf(w) => { (w, 1) },
         }
     }
     impl Parse for FunctionExpr {
         fn parse(__input: ParseStream) -> ::syn::Result<Self> {
             let paren;
             let ret = Self { name: __input.parse()?, paren: syn::parenthesized!(paren in __input ), args: PestIgnoredPunctuated::parse_separated_nonempty(&paren)? };
-            let expected_num = function_name_expected_args(&ret.name);
-            if expected_num == ret.args.0.len() {
+            let signature = function_name_expected_args(&ret.name);
+            if signature.1 == ret.args.0.len() {
                 Ok(ret)
             } else {
-                Err(syn::Error::new(ret.args.span(), format!("Invalid number of arguments for function {}, expected {}", &ret.name, function_name_expected_args(&ret.name))))
+                Err(syn::Error::new(ret.args.span(), format!("Invalid number of arguments for function {}, expected {}", signature.0, function_name_expected_args(&ret.name))))
             }
         }
     }
