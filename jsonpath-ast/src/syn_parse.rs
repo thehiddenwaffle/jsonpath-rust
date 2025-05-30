@@ -1,24 +1,25 @@
 #[cfg(feature = "compiled-path")]
 pub(crate) mod parse_impl {
     use crate::ast::parse::{JSPathParser, Rule};
+    use crate::ast::{kw, CompOp, IndexSelector, Main, NameSelector};
     use crate::ast::{
         AbsSingularQuery, AtomExpr, Bool, BracketName, BracketedSelection, ChildSegment, CompExpr,
-        Comparable, DescendantSegment, EOI, FilterSelector, FunctionArgument, FunctionExpr,
-        FunctionName, IndexSegment, JPQuery, JSInt, JSString, Literal, LogicalExpr, LogicalExprAnd,
-        MemberNameShorthand, NameSegment, NotOp, Null, Number, ParenExpr, PestIgnoredPunctuated,
-        PestLiteralWithoutRule, RelQuery, RelSingularQuery, Root, Segment, Segments, Selector,
-        SingularQuery, SingularQuerySegment, SingularQuerySegments, SliceEnd, SliceSelector,
-        SliceStart, SliceStep, Test, TestExpr, WildcardSelector,
-        WildcardSelectorOrMemberNameShorthand,
+        Comparable, DescendantSegment, FilterSelector, FunctionArgument, FunctionExpr, FunctionName,
+        IndexSegment, JPQuery, JSInt, JSString, Literal, LogicalExpr, LogicalExprAnd, MemberNameShorthand,
+        NameSegment, NotOp, Null, Number, ParenExpr, PestIgnoredPunctuated, PestLiteralWithoutRule,
+        RelQuery, RelSingularQuery, Root, Segment, Segments, Selector, SingularQuery,
+        SingularQuerySegment, SingularQuerySegments, SliceEnd, SliceSelector, SliceStart,
+        SliceStep, Test, TestExpr, WildcardSelector, WildcardSelectorOrMemberNameShorthand,
+        EOI,
     };
-    use crate::ast::{CompOp, IndexSelector, Main, NameSelector, kw};
     use pest::Parser;
     use proc_macro2::{Ident, TokenStream};
-    use quote::{ToTokens, quote};
+    use quote::{quote, ToTokens};
     use syn::parse::{Parse, ParseStream};
     use syn::punctuated::Punctuated;
+    use syn::spanned::Spanned;
     use syn::token::Token;
-    use syn::{LitBool, LitInt, LitStr, Token, token};
+    use syn::{token, LitBool, LitInt, LitStr, Token};
 
     pub trait ParseUtilsExt: Parse {
         fn peek(input: ParseStream) -> bool;
@@ -1082,6 +1083,27 @@ pub(crate) mod parse_impl {
             ));
         }
         Ok(num)
+    }
+
+    fn function_name_expected_args(name: &FunctionName) -> usize {
+        match name {
+            FunctionName::Length | FunctionName::Value | FunctionName::Count => { 2 },
+            FunctionName::Search | FunctionName::Match
+            | FunctionName::In | FunctionName::Nin
+            | FunctionName::NoneOf | FunctionName::AnyOf | FunctionName::SubsetOf => { 1 },
+        }
+    }
+    impl Parse for FunctionExpr {
+        fn parse(__input: ParseStream) -> ::syn::Result<Self> {
+            let paren;
+            let ret = Self { name: __input.parse()?, paren: syn::parenthesized!(paren in __input ), args: PestIgnoredPunctuated::parse_separated_nonempty(&paren)? };
+            let expected_num = function_name_expected_args(&ret.name);
+            if expected_num == ret.args.0.len() {
+                Ok(ret)
+            } else {
+                Err(syn::Error::new(ret.args.span(), format!("Invalid number of arguments for function {}, expected {}", &ret.name, function_name_expected_args(&ret.name))))
+            }
+        }
     }
 
     impl ParseUtilsExt for FunctionExpr {
