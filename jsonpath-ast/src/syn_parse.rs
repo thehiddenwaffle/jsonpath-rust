@@ -1087,10 +1087,10 @@ pub(crate) mod parse_impl {
 
     fn function_name_expected_args(name: &FunctionName) -> (String, usize) {
         (format!("{:?}", name), match name {
-            FunctionName::Length(_) | FunctionName::Value(_) | FunctionName::Count(_) => { 2 },
+            FunctionName::Length(_) | FunctionName::Value(_) | FunctionName::Count(_) => { 1 },
             FunctionName::Search(_) | FunctionName::Match(_)
             | FunctionName::In(_) | FunctionName::Nin(_)
-            | FunctionName::NoneOf(_) | FunctionName::AnyOf(_) | FunctionName::SubsetOf(_) => { 1 },
+            | FunctionName::NoneOf(_) | FunctionName::AnyOf(_) | FunctionName::SubsetOf(_) => { 2 },
         })
     }
     impl Parse for FunctionExpr {
