@@ -1085,23 +1085,23 @@ pub(crate) mod parse_impl {
         Ok(num)
     }
 
-    fn function_name_expected_args(name: &FunctionName) -> usize {
-        match name {
-            FunctionName::Length | FunctionName::Value | FunctionName::Count => { 2 },
-            FunctionName::Search | FunctionName::Match
-            | FunctionName::In | FunctionName::Nin
-            | FunctionName::NoneOf | FunctionName::AnyOf | FunctionName::SubsetOf => { 1 },
-        }
+    fn function_name_expected_args(name: &FunctionName) -> (String, usize) {
+        (format!("{:?}", name), match name {
+            FunctionName::Length(_) | FunctionName::Value(_) | FunctionName::Count(_) => { 2 },
+            FunctionName::Search(_) | FunctionName::Match(_)
+            | FunctionName::In(_) | FunctionName::Nin(_)
+            | FunctionName::NoneOf(_) | FunctionName::AnyOf(_) | FunctionName::SubsetOf(_) => { 1 },
+        })
     }
     impl Parse for FunctionExpr {
         fn parse(__input: ParseStream) -> ::syn::Result<Self> {
             let paren;
             let ret = Self { name: __input.parse()?, paren: syn::parenthesized!(paren in __input ), args: PestIgnoredPunctuated::parse_separated_nonempty(&paren)? };
-            let expected_num = function_name_expected_args(&ret.name);
-            if expected_num == ret.args.0.len() {
+            let (func_name, expected_num_args) = function_name_expected_args(&ret.name);
+            if expected_num_args == ret.args.0.len() {
                 Ok(ret)
             } else {
-                Err(syn::Error::new(ret.args.span(), format!("Invalid number of arguments for function {}, expected {}", &ret.name, function_name_expected_args(&ret.name))))
+                Err(syn::Error::new(ret.args.span(), format!("Invalid number of arguments for function {}, expected {}", func_name, expected_num_args)))
             }
         }
     }
@@ -1125,53 +1125,6 @@ pub(crate) mod parse_impl {
                 || input.peek(kw::any_of)
                 || input.peek(kw::subset_of)
         }
-    }
-
-    pub fn validate_function_name(input: ParseStream) -> Result<Ident, syn::Error> {
-        if input.peek(kw::length) {
-            input.parse::<kw::length>()?;
-            return Ok(Ident::new("length", input.span()));
-        }
-        if input.peek(kw::value) {
-            input.parse::<kw::value>()?;
-            return Ok(Ident::new("value", input.span()));
-        }
-        if input.peek(kw::count) {
-            input.parse::<kw::count>()?;
-            return Ok(Ident::new("count", input.span()));
-        }
-        if input.peek(kw::search) {
-            input.parse::<kw::search>()?;
-            return Ok(Ident::new("search", input.span()));
-        }
-        if input.peek(Token![match]) {
-            input.parse::<Token![match]>()?;
-            return Ok(Ident::new("match", input.span()));
-        }
-        if input.peek(Token![in]) {
-            input.parse::<Token![in]>()?;
-            return Ok(Ident::new("in", input.span()));
-        }
-        if input.peek(kw::nin) {
-            input.parse::<kw::nin>()?;
-            return Ok(Ident::new("nin", input.span()));
-        }
-        if input.peek(kw::none_of) {
-            input.parse::<kw::none_of>()?;
-            return Ok(Ident::new("none_of", input.span()));
-        }
-        if input.peek(kw::any_of) {
-            input.parse::<kw::any_of>()?;
-            return Ok(Ident::new("any_of", input.span()));
-        }
-        if input.peek(kw::subset_of) {
-            input.parse::<kw::subset_of>()?;
-            return Ok(Ident::new("subset_of", input.span()));
-        }
-        Err(syn::Error::new(
-            input.span(),
-            "invalid function name, expected one of: length, value, count, search, match, in, nin, none_of, any_of, subset_of",
-        ))
     }
 
     impl ParseUtilsExt for RelQuery {
