@@ -685,11 +685,9 @@ impl<'pest> FromPest<'pest> for FunctionName {
         let pair = clone.next().ok_or(ConversionError::NoMatch)?;
         if matches!(
             pair.as_rule(),
-            Rule::function_name_one_arg | Rule::function_name_two_arg
+            Rule::function_name
         ) {
-            let mut inner = pair.into_inner();
-            let inner = &mut inner;
-            let this = match inner.to_string().as_str().trim() {
+            let this = match pair.as_str().trim() {
                 "length" => Self::Length(Default::default()),
                 "value" => Self::Value(Default::default()),
                 "count" => Self::Count(Default::default()),

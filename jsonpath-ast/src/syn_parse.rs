@@ -857,9 +857,13 @@ pub(crate) mod parse_impl {
     impl ToTokens for TestExpr {
         fn to_tokens(&self, tokens: &mut TokenStream) {
             let Self { not_op, test } = self;
+            let repr_not = match not_op {
+                Some(not_op) => quote! {Some(#not_op)},
+                None => quote! {None},
+            };
             tokens.extend(quote! {
                 ::jsonpath_ast::ast::TestExpr::new(
-                    #not_op,
+                    #repr_not,
                     #test
                 )
             });
@@ -1009,7 +1013,11 @@ pub(crate) mod parse_impl {
 
     impl ParseUtilsExt for CompExpr {
         fn peek(input: ParseStream) -> bool {
-            Comparable::peek(input)
+            let fork = input.fork();
+            // This is very suboptimal but the only option because at this point in the stream a comp_expr and a test_expr
+            //  look identical if they're both functions, IE: $[?match(@, $.regex)] is a test_exp while $[?match(@, $.regex) == true]
+            //  is a comp_exp
+            fork.parse::<Comparable>().is_ok() && fork.parse::<CompOp>().is_ok()
         }
     }
     impl ParseUtilsExt for TestExpr {
